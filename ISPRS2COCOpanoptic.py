@@ -9,16 +9,16 @@ converter = __import__('2channels2panoptic_coco_format').converter
 
 # the list of categories in Vaihingen/Potsdam
 categories_list = [
-    {"name": "impervious_surfaces", "color": (255,255,255), 'id':0},
-    {"name":"building", "color": (0, 0, 255), 'id':2},
-    {"name":"low_vegetation", "color": (0, 255, 255), 'id':3},
-    {"name":"tree", "color": (0, 255, 0), 'id':4},
-    {"name":"car", "color": (255, 255, 0), 'id':5},
-    {"name":"clutter/background", "color": (255, 0, 0), 'id':6}
+    {"name": "impervious_surfaces", "color": (255,255,255), 'id':1},
+    {"name": "building", "color": (0, 0, 255), 'id':2},
+    {"name": "low_vegetation", "color": (0, 255, 255), 'id':3},
+    {"name": "tree", "color": (0, 255, 0), 'id':4},
+    {"name": "car", "color": (255, 255, 0), 'id':5},
+    {"name": "clutter/background", "color": (255, 0, 0), 'id':6}
 ]
 
 # the list of not instances
-notthing_ids = [6]
+notthing_ids = [1,3,6]
 
 def create_panoptic_coco_categories_list(categories_list=categories_list, notthing_ids=notthing_ids):
     '''
@@ -121,7 +121,7 @@ def com_encode_label(label):
 def com_encode_color(color):
     return 255 * 255 * color[0] + 255 * color[1] + color[2]
 
-def create_2channels_format_label(label_file, categories_list = categories_list):
+def create_2channels_format_label(label_file, categories_list = categories_list, notthing_ids = notthing_ids):
     '''
     read label information and save it in 2 channels format. Each segment of 2 channels label is defined by two labels: (1) semantic category label and (2) instance ID label.
     :param image_files_list: list
@@ -132,10 +132,14 @@ def create_2channels_format_label(label_file, categories_list = categories_list)
     label_1_band = np.zeros(label.shape[0:2])
     for category in categories_list:
         label_1_band = np.where(encode_label==com_encode_color(category["color"]), category['id'], label_1_band)
-        inss_label, num_features = measure.label(label_1_band)
+    inss_label, num_features = measure.label(label_1_band,return_num=True)
     
     label_2channels = np.zeros(label.shape)
     label_2channels[:,:,0], label_2channels[:,:,1] = label_1_band, inss_label
+
+    for category in categories_list:
+        if category['id'] in notthing_ids:
+            label_2channels[:,:,1] = np.where(encode_label==com_encode_color(category["color"]), 0, label_2channels[:,:,1])
 
     return label_2channels.astype(np.uint8), num_features
 
@@ -325,11 +329,33 @@ def gen_dataset(
 
 
 if __name__ == '__main__':
-    images_folder = r'Potsdam\4_Ortho_RGBIR_little'
-    labels_folder = r'\Potsdam\5_Labels_all_little'
-    coco_dataset_folder = r'\Potsdam\coco_format'
-    id_list = [{1210},{1211}]
+
+    images_folder = r'Potsdam\4_Ortho_RGBIR'
+    labels_folder = r'Potsdam\5_Labels_all'
+    coco_dataset_folder = r'Potsdam\Potsdam_coco_format'
+    id_list = [
+        {1210,1211,1212,1213,1214,
+        1310,1311,1312,1313,1314,
+        1410,1411,1412,1413,1414,1415,
+        1510,1511,1512,1513,1514,1515,
+        1607,1608,1609,1610,1611,1612,1613,1614,1615,
+        1707,1708,1709,1710,1711,1712,1713},
+        {1210}] # all id about Potsdam images
     gen_dataset(
     images_folder, labels_folder, coco_dataset_folder,
     cut_parameter = id_list,
     )
+
+    # images_folder = r'Vaihingen\top'
+    # labels_folder = r'Vaihingen\ISPRS_semantic_labeling_Vaihingen_ground_truth_COMPLETE'
+    # coco_dataset_folder = r'Vaihingen\Vaihingen_coco_format'
+    # id_list = [
+    #     {1,2,3,4,5,6,7,8,
+    #     10,11,12,13,14,15,16,17,
+    #     20,21,22,23,24,26,27,28,29,
+    #     30,31,32,33,34,35,37,38},
+    #     {1}] # all id about Vaihingen images
+    # gen_dataset(
+    # images_folder, labels_folder, coco_dataset_folder,
+    # cut_parameter = id_list,
+    # )
