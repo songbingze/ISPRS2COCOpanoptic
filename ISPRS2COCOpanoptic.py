@@ -1,8 +1,7 @@
 import numpy as np
 import tifffile
 from pathlib import Path
-from skimage import io
-from scipy import ndimage
+from skimage import io, measure
 import json
 import shutil
 converter = __import__('2channels2panoptic_coco_format').converter
@@ -133,7 +132,7 @@ def create_2channels_format_label(label_file, categories_list = categories_list)
     label_1_band = np.zeros(label.shape[0:2])
     for category in categories_list:
         label_1_band = np.where(encode_label==com_encode_color(category["color"]), category['id'], label_1_band)
-        inss_label, num_features = ndimage.label(label_1_band)
+        inss_label, num_features = measure.label(label_1_band)
     
     label_2channels = np.zeros(label.shape)
     label_2channels[:,:,0], label_2channels[:,:,1] = label_1_band, inss_label
