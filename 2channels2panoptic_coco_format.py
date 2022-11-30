@@ -41,7 +41,7 @@ def convert_single_core(proc_id, image_set, categories, source_folder, segmentat
         if working_idx % 100 == 0:
             print('Core: {}, {} from {} images converted'.format(proc_id, working_idx, len(image_set)))
 
-        file_name = '{}.tif'.format(image_info['file_name'].rsplit('.')[0])
+        file_name = '{}.png'.format(image_info['file_name'].rsplit('.')[0])
         try:
             original_format = np.array(Image.open(os.path.join(source_folder, file_name)), dtype=np.uint32)
         except IOError:
